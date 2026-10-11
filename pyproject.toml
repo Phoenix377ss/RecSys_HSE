@@ -16,17 +16,74 @@ classifiers = [
     
 ]
 requires-python = "~=3.13.0"
+dependencies = [
+    "annotated-doc==0.0.5",
+    "ast-serialize==0.12.1",
+    "colorama==0.4.6",
+    "huggingface-hub>=2.2.0",
+    "librt==0.16.0",
+    "loguru==0.7.3",
+    "markdown-it-py==4.2.0",
+    "mdurl==0.1.2",
+    "mypy==2.4.0",
+    "mypy-extensions==1.1.0",
+    "pathspec==1.1.1",
+    "pygments==2.21.0",
+    "python-dotenv==1.2.4",
+    "rich==15.0.0",
+    "ruff==0.17.0",
+    "shellingham==1.5.4",
+    "tqdm==4.70.1",
+    "typer==0.27.3",
+    "typing-extensions==4.16.0",
+    "win32-setctime==1.2.0",
+]
 
 
 [tool.ruff]
+target-version = "py313"
 line-length = 99
 src = ["res_sys"]
 include = ["pyproject.toml", "res_sys/**/*.py"]
 
+
 [tool.ruff.lint]
-extend-select = ["I"]  # Add import sorting
+select = ["E", "W", "F", "B", "N","I"]
+
+ignore = [
+    "E731", # Разрешаем использовать lambda-выражения 
+    "B008", # Разрешаем вызовы функций в аргументах по умолчанию
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["res_sys"]
 force-sort-within-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+"res_sys/plots.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true       # Требовать типы для функций (в основном коде пакета)
+disallow_incomplete_defs = true    # Запрещать частичную аннотацию
+
+[[tool.mypy.overrides]]
+module = [
+    "pandas.*",
+    "numpy.*",
+    "sklearn.*",
+    "matplotlib.*",
+    "seaborn.*",
+    "torch.*",
+    "tqdm"
+]
+ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "ruff>=0.17.0",
+]
 
