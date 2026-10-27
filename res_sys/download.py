@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from huggingface_hub import snapshot_download
+from huggingface_hub import snapshot_download,hf_hub_download
 from loguru import logger
 import typer
 
@@ -12,7 +12,7 @@ app = typer.Typer()
 @app.command()
 def main(
     repo_id: str = "t-tech/T-ECD",
-    allow_patterns: str = "dataset/small/*",
+    allow_patterns: str = "dataset/small/marketplace/*",
     output_dir: Path = RAW_DATA_DIR,
 ) -> None:
 
@@ -28,6 +28,13 @@ def main(
             local_dir=output_dir,
         )
         logger.success(f"T-ECD dataset files successfully downloaded into: {output_dir}")
+
+        hf_hub_download(
+            repo_id="t-tech/T-ECD",
+            repo_type="dataset",
+            filename="dataset/full/users.pq",
+            local_dir=RAW_DATA_DIR
+)
 
     except Exception as e:
         logger.error(f"Failed to download dataset via snapshot_download: {e}")
