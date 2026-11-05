@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from huggingface_hub import snapshot_download,hf_hub_download
+from huggingface_hub import hf_hub_download, snapshot_download
 from loguru import logger
 import typer
 
