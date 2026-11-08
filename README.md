@@ -51,7 +51,7 @@ jupyter lab notebooks/
 
 Ноутбуки:
 - `1_EDA.ipynb` — разведочный анализ (события, пользователи, соцдем-кластеры, товары).
-- `2_baseline_top_pop.ipynb` — бейзлайн: top-pop товары по сглаженной конверсии seen→tap в разрезе соцдем-кластеров (`CTR = (clicks + α·CTR_global) / (views + α)`), оценка Recall/Precision/HitRate@20 на последних 7 днях.
+- `2_baseline_top_pop.ipynb` — бейзлайн: top-pop товары по сглаженной конверсии seen→tap в разрезе соцдем-кластеров (`CTR = (clicks + α·CTR_global) / (views + α)`) против ALS (implicit, factors=64, 20 итераций, обучается на кликах train); оценка Recall/Precision/HitRate@20 на последних 7 днях.
 
 ---
 
