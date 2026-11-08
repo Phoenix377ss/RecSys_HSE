@@ -5,10 +5,13 @@ matplotlib
 notebook
 numpy
 pandas
-pip
+pyarrow
 python-dotenv
 ruff
 scikit-learn
+seaborn
 tqdm
 typer
+huggingface-hub
+jinja2
 -e .

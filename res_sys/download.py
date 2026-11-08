@@ -1,10 +1,15 @@
+import os
 from pathlib import Path
 
-from huggingface_hub import hf_hub_download, snapshot_download
-from loguru import logger
-import typer
-
 from res_sys.config import RAW_DATA_DIR
+
+# Кэш HF держим внутри проекта (data/.hf_cache): $HOME/.cache не везде доступен
+# для записи, а кэш на несколько ГБ не должен засорять домашнюю папку.
+os.environ.setdefault("HF_HOME", str(RAW_DATA_DIR.parent / ".hf_cache"))
+
+from huggingface_hub import hf_hub_download, snapshot_download  # noqa: E402
+from loguru import logger  # noqa: E402
+import typer  # noqa: E402
 
 app = typer.Typer()
 

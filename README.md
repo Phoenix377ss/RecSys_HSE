@@ -20,6 +20,41 @@
 
 ---
 
+## Датасет
+
+Используется [T-ECD](https://huggingface.co/datasets/t-tech/T-ECD) (T-Bank, KDD'26) — открытый датасет e-commerce взаимодействий. Берём домен **Marketplace** (small-версия) + справочник пользователей:
+
+| Файл | Что содержит |
+| ---- | ------------ |
+| `dataset/small/marketplace/events/*.pq` | ~130 млн событий за 227 дней: `user_id, item_id, action_type, subdomain, os, timestamp` |
+| `dataset/small/marketplace/items.pq` | каталог ~2.3 млн товаров: `brand_id, category, subcategory, price, embedding` |
+| `dataset/full/users.pq` | ~44 млн пользователей: `socdem_cluster, region` |
+
+Типы действий: `view` (показ, **seen**) → `click` (клик по карточке, **tap**) → `clickout` (уход на внешний сайт); отдельно `like`.
+Ключевая величина для рекомендаций — **конверсия seen→tap** = `click / view`.
+
+Скачивание (~3.6 ГБ, кэш HF хранится в `data/.hf_cache`):
+
+```bash
+make download          # или: python res_sys/download.py
+```
+
+---
+
+## Быстрый старт
+
+```bash
+uv venv && uv pip install -r requirements.txt   # или python -m venv .venv && pip install -r requirements.txt
+make download
+jupyter lab notebooks/
+```
+
+Ноутбуки:
+- `1_EDA.ipynb` — разведочный анализ (события, пользователи, соцдем-кластеры, товары).
+- `2_baseline_top_pop.ipynb` — бейзлайн: top-pop товары по сглаженной конверсии seen→tap в разрезе соцдем-кластеров (`CTR = (clicks + α·CTR_global) / (views + α)`) против ALS (implicit, factors=64, 20 итераций, обучается на кликах train); оценка Recall/Precision/HitRate@20 на последних 7 днях.
+
+---
+
 ## Задачи и план работ
 
 ### Ресерч

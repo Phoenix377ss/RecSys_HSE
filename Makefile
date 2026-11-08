@@ -58,7 +58,12 @@ create_environment:
 #################################################################################
 
 
-## Make dataset
+## Download raw T-ECD dataset (~3.6 GB)
+.PHONY: download
+download:
+	$(PYTHON_INTERPRETER) res_sys/download.py
+
+## Filter data and build train/test splits
 .PHONY: data
 data: requirements
 	$(PYTHON_INTERPRETER) res_sys/dataset.py
