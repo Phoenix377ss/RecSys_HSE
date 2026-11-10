@@ -1,0 +1,28 @@
+services:
+  mlflow:
+    build:
+      context: ..
+      dockerfile: deploy/docker/mlflow.Dockerfile
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow_data:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  mlflow-smoke-test:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    profiles: ["test"]
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    volumes:
+      - ../tests:/tests
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    command: uv run --with mlflow --with pytest pytest /tests/test_mlflow_integration.py -v

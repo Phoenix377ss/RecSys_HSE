@@ -14,4 +14,5 @@ tqdm
 typer
 huggingface-hub
 jinja2
+mlflow
 -e .
