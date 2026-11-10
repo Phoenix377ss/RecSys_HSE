@@ -3,7 +3,6 @@ FROM ghcr.io/mlflow/mlflow:v3.18.0
 # uv образ
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-
 RUN uv pip install --system --no-cache psycopg2-binary boto3
 
 WORKDIR /mlflow
