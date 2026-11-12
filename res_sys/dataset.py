@@ -28,6 +28,12 @@ from res_sys.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
 app = typer.Typer()
 
 KEEP_COLS = ["user_id", "item_id", "timestamp"]
+
+# Правило T-ECD (карточка датасета t-tech/T-ECD): в данных есть временной шум,
+# поэтому между последним событием пользователя в train и событиями в test нужен
+# зазор не менее 12 часов, а последние 12 часов датасета использовать нельзя
+# ("applies to both training and testing scenarios").
+TIME_DELTA = pd.Timedelta(hours=12)
 # ---------------------------------------------------------------------------
 # 1. Загрузка
 # ---------------------------------------------------------------------------
@@ -98,6 +104,51 @@ def replay_filter(
 # ---------------------------------------------------------------------------
 # 4. Сплиттеры
 # ---------------------------------------------------------------------------
+def drop_noisy_tail(df: pd.DataFrame, delta: pd.Timedelta = TIME_DELTA) -> pd.DataFrame:
+    """Отбрасывает последние `delta` датасета.
+
+    Правило T-ECD: финальные 12 часов содержат временной шум (логирование
+    обрывается несинхронно, событиям хвоста нельзя доверять) — их не используем
+    ни в train, ни в test.
+    """
+    cutoff = df["timestamp"].max() - delta
+    kept = df[df["timestamp"] <= cutoff].reset_index(drop=True)
+    logger.info(f"Шумный хвост: отброшено {len(df) - len(kept):,} событий (после {cutoff})")
+    return kept
+
+
+def enforce_time_gap(
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+    delta: pd.Timedelta = TIME_DELTA,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Гарантирует per-user зазор >= `delta` между train и test (правило T-ECD).
+
+    Из-за временного шума T-ECD порядок событий ближе 12 часов ненадёжен: test,
+    начинающийся сразу за train-хвостом пользователя, означает утечку будущего.
+    События test, нарушающие зазор, переносятся в train (данные не теряются:
+    они старше оставшихся test-событий и утечкой не являются). Цикл нужен,
+    потому что перенос может поднять train-хвост пользователя.
+    """
+    train = train.reset_index(drop=True)
+    test = test.reset_index(drop=True)
+    moved_total = 0
+
+    while True:
+        last_train = train.groupby("user_id", sort=False)["timestamp"].max()
+        cutoff = test["user_id"].map(last_train) + delta  # NaT у юзеров без train -> False
+        violating = test["timestamp"] < cutoff
+        if not violating.any():
+            break
+        train = pd.concat([train, test[violating]], ignore_index=True)
+        test = test[~violating].reset_index(drop=True)
+        moved_total += int(violating.sum())
+
+    if moved_total:
+        logger.info(f"12h-зазор: {moved_total:,} test-событий перенесено в train")
+    return train, test
+
+
 def split_data(df: pd.DataFrame, mode: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = df.sort_values(["user_id", "timestamp"]).reset_index(drop=True)
 
@@ -129,6 +180,8 @@ def split_data(df: pd.DataFrame, mode: str) -> tuple[pd.DataFrame, pd.DataFrame]
         ).split(df)
     else:
         raise ValueError(f"Unknown split mode: {mode}")
+
+    train, test = enforce_time_gap(train, test)
 
     logger.info(f"[{mode}] train={len(train):,} | test={len(test):,}")
     return train, test
@@ -188,6 +241,7 @@ def main(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     df = load_raw(input_dir)
+    df = drop_noisy_tail(df)
     before = dataset_stats(df, "before_filter")
 
     df = replay_filter(
